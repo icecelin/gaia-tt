@@ -14,7 +14,7 @@ export async function GET() {
     }
 
     const client = await clientPromise;
-    const db = client.db('tech_tree_db');
+    const db = client.db('fossil_fuel');
 
     // Fetch nodes and edges from MongoDB
     const nodesCollection = db.collection('nodes');
