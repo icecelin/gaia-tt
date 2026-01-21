@@ -11,7 +11,7 @@ import {
   ReactFlow,
   useReactFlow,
 } from '@xyflow/react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Legend } from './Legend';
 import { LoadingSpinner } from './LoadingSpinner';
 import { GroupSelector } from './GroupSelector';
@@ -50,6 +50,7 @@ const TechTree: React.FC = () => {
   const [showOnlyConnected, setShowOnlyConnected] = useState<boolean>(false);
   const [searchInput, setSearchInput] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [isEditing, setIsEditing] = useState(false);
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);
   const [showLegend, setShowLegend] = useState(false);
@@ -118,8 +119,39 @@ const TechTree: React.FC = () => {
     setSearchTerm(searchInput);
   }, [searchInput, searchTerm]);
 
+  const categories = useMemo(() => {
+    if (!techTree) return [];
+
+    const unique = new Set<string>();
+    for (const node of techTree.nodes) {
+      const raw = (node.data as Record<string, unknown>).category;
+      if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        if (trimmed) unique.add(trimmed);
+      }
+    }
+
+    return Array.from(unique).sort((a, b) => a.localeCompare(b));
+  }, [techTree]);
+
+  const filteredTechTree = useMemo(() => {
+    if (!techTree) return null;
+    if (selectedCategory === 'All') return techTree;
+
+    const matchingNodes = techTree.nodes.filter((node) => {
+      const raw = (node.data as Record<string, unknown>).category;
+      return typeof raw === 'string' && raw.trim() === selectedCategory;
+    });
+    const visibleIds = new Set(matchingNodes.map((n) => n.id));
+    const matchingEdges = techTree.edges.filter(
+      (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
+    );
+
+    return { nodes: matchingNodes, edges: matchingEdges };
+  }, [techTree, selectedCategory]);
+
   useEffect(() => {
-    if (!techTree) return;
+    if (!filteredTechTree) return;
 
     const loadLayout = async () => {
       setIsLoading(true);
@@ -128,7 +160,7 @@ const TechTree: React.FC = () => {
         showingRelatedNodes,
         showOnlyConnected,
         searchTerm,
-        techTree,
+        filteredTechTree,
       );
       setNodes(() => layoutedNodes);
       setEdges(() => layoutedEdges);
@@ -143,7 +175,7 @@ const TechTree: React.FC = () => {
     showingRelatedNodes,
     showOnlyConnected,
     searchTerm,
-    techTree,
+    filteredTechTree,
   ]);
 
   // Update node and edge styles based on highlighted elements
@@ -226,6 +258,14 @@ const TechTree: React.FC = () => {
     setHighlightedElements({ nodeIds: new Set(), edgeIds: new Set() });
   }, []);
 
+  const handleCategoryChange = useCallback((category: string) => {
+    setSelectedCategory(category);
+    setSelectedNode(undefined);
+    setShowingRelatedNodes(null);
+    setShowOnlyConnected(false);
+    setHighlightedElements({ nodeIds: new Set(), edgeIds: new Set() });
+  }, []);
+
   const handleReset = useCallback(() => {
     setSelectedNode(undefined);
     setShowingRelatedNodes(null);
@@ -233,6 +273,7 @@ const TechTree: React.FC = () => {
     setSearchInput('');
     setSearchTerm('');
     setHighlightedElements({ nodeIds: new Set(), edgeIds: new Set() });
+    setSelectedCategory('All');
   }, []);
 
   const handleSearchChange = useCallback((value: string) => {
@@ -253,6 +294,9 @@ const TechTree: React.FC = () => {
         <GroupSelector
           currentMode={groupingMode}
           onModeChange={handleGroupingModeChange}
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onCategoryChange={handleCategoryChange}
           selectedNode={selectedNode}
           showingConnectedNodes={showingRelatedNodes !== null}
           onReset={handleReset}

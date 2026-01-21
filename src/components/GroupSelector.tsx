@@ -15,6 +15,9 @@ import { Menu, Eye } from 'lucide-react';
 interface GroupSelectorProps {
   currentMode: GroupingMode;
   onModeChange: (mode: GroupingMode) => void;
+  categories: string[];
+  selectedCategory: string;
+  onCategoryChange: (category: string) => void;
   selectedNode?: UiNode;
   showingConnectedNodes: boolean;
   onReset: () => void;
@@ -31,6 +34,9 @@ interface GroupSelectorProps {
 export const GroupSelector: React.FC<GroupSelectorProps> = ({
   currentMode,
   onModeChange,
+  categories,
+  selectedCategory,
+  onCategoryChange,
   selectedNode,
   showingConnectedNodes,
   onReset,
@@ -116,6 +122,29 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
               </div>
             </div>
 
+            {/* Category Filter */}
+            <div className="flex items-center gap-2">
+              <label
+                htmlFor="category-selector"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
+                Category:
+              </label>
+              <Select value={selectedCategory} onValueChange={onCategoryChange}>
+                <SelectTrigger id="category-selector" className="w-48">
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Group By Selector */}
             <div className="flex items-center gap-2">
               <label
@@ -125,7 +154,7 @@ export const GroupSelector: React.FC<GroupSelectorProps> = ({
                 Group By:
               </label>
               <Select value={currentMode} onValueChange={onModeChange}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger id="group-selector" className="w-48">
                   <SelectValue placeholder="Select grouping mode" />
                 </SelectTrigger>
                 <SelectContent>
