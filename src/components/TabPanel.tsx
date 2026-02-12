@@ -106,13 +106,7 @@ const TabPanel = ({ selectedNode, techTree, isPanelExpanded, onTogglePanel }: Ta
         </TabsContent>
 
         <TabsContent value="simulations" className="flex-1 overflow-y-auto mt-0">
-          {techTree ? (
-            <Simulations techTree={techTree} />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-gray-500">Loading simulation data...</p>
-            </div>
-          )}
+          <Simulations />
         </TabsContent>
       </Tabs>
       </div>
